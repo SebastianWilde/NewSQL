@@ -1,0 +1,3 @@
+id,name_data,type,size
+1,id,int,4
+1,text,varchar,10

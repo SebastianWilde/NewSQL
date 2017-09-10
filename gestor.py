@@ -143,14 +143,20 @@ def procesar_comando(lista_comando):
                 return
 
             #Comprobar con los campos de la tabla
-            if datos_completos == True:
-                manejador_csv.escribir_csv(direccion_insert,nombre_tabla,data)
-            else:
-                print("pendiente")
+            if datos_completos == False:
+                header_tabla = manejador_csv.leer_csv(direccion_insert,nombre_tabla,"header") #Header de la tabla
+                faltantes = []
+                for head in header_tabla:
+                    if header_in.find(head)<0:
+                        faltantes.append(header_tabla.index(head))
+                for it in faltantes:
+                    data.insert(it,"null")
+            print(data)
+            manejador_csv.escribir_csv(direccion_insert, nombre_tabla, data)
         else:
             print("Error de sintexis, falta INTO")
             return
-        print("Insertando")
+        print("Datos insertados")
 
     elif lista_comando[0] == "UPDATE":
         print("Actualizando")

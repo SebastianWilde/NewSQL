@@ -22,9 +22,12 @@ def escribir_csv(direccion, nombre_archivo, datos):
         else:
             writer.writerow(datos)
 
-def leer_csv(direccion,nombre_archivo):
+def leer_csv(direccion,nombre_archivo,tag=""):
     with open(direccion + "/" + nombre_archivo+ ".csv") as csvarchivo:
         entrada = csv.reader(csvarchivo)
         linea = [l for l in entrada]
-        for reg in entrada:
-            print(reg)
+    if (tag=="header"):
+        return linea[0]
+    elif (tag=="data"):
+        return linea[1:]
+    return linea

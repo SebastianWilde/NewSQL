@@ -266,7 +266,9 @@ def procesar_comando(lista_comando):
                 filtro_columna = datos_where[0]
                 filtro_criterio = datos_where[1]
                 df = pandas.read_csv(direccion_delete + nombre_tabla + ".csv")
-                df.drop(df.query(filtro_columna+"=="+'"'+filtro_criterio+'"').sample(frac=0.90).index)
+                indices_to_delete = df.index[df[filtro_columna]==filtro_criterio].tolist()
+                df.drop(df.index[indices_to_delete],inplace=True)
+                #df.drop(df.query(filtro_columna+"=="+'"'+filtro_criterio+'"').sample(frac=0.90).index)
                 df.to_csv(direccion_delete + nombre_tabla + ".csv", index=False)
             else:
                 print("Error, falta WHERE")

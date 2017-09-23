@@ -1,5 +1,5 @@
 import os #para usar las funciones del sistema operativo
-
+import os.path as path
 import shutil #para eliminar
 
 import manejador_csv #para crear archivos csv para almancenar los datos
@@ -286,8 +286,9 @@ def procesar_comando(lista_comando):
 
 #Al iniciar se crea una archivo donde se almacene informacion de todas las bases
 #de datos que se creen
-header_database_info = ["id","name_db","creacion","eliminacion"]
-manejador_csv.crear_archivo(os.getcwd(),"database_info",header_database_info)
+if (path.exists("database_info.csv")==False):
+    header_database_info = ["id","name_db","creacion","eliminacion"]
+    manejador_csv.crear_archivo(os.getcwd(),"database_info",header_database_info)
 #Preguntar comandos
 comando = ""
 while (comando != "exit"):

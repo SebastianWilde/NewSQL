@@ -1,3 +1,6 @@
 id,name_tabla,creacion,eliminacion
 1,tab1,2017-09-09,null
 1,tab1,2017-09-09,null
+1,tb2,2017-09-22,2017-09-22
+1,tb3,2017-09-22,2017-09-22
+1,tb2,2017-09-22,null

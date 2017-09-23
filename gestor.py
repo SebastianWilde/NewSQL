@@ -10,6 +10,8 @@ import pandas #para sobreescribir csv
 
 import time #medir el tiempo
 
+from tabulate import tabulate
+
 def procesar_comando(lista_comando):
     if lista_comando[0] == "CREATE":
         ruta = os.getcwd() + "/" #obteniendo la ruta actual
@@ -114,12 +116,53 @@ def procesar_comando(lista_comando):
             return 0
 
     elif lista_comando[0] == "SELECT":
-        print("Buscando")
+        it1 = lista_comando[1].find("(")
+        it2 = lista_comando[1].find(")")
+        datos_completos = True  # para saber si busca en todos los campos o solo en algunos
+        if it2 - it1 > 1:
+            header_in = lista_comando[1][it1 + 1:it2]  # capturar las columnas a ingresar
+            header_in = header_in.split(",")
+            datos_completos = False
+        comando_aux1 = lista_comando[1][it2 + 1:]
+        comando_aux1 = comando_aux1.split(maxsplit=4)
+        if (comando_aux1[0] == "FROM"):
+            nombre_db = comando_aux1[1]
+            nombre_tabla = comando_aux1[2]
+            direccion_select = os.getcwd() + "/" + nombre_db + "/" + nombre_tabla + "/"
+            header_tabla = manejador_csv.leer_csv(direccion_select, nombre_tabla, "header")  # Header de la tabla
+            datos = pandas.read_csv(direccion_select + nombre_tabla + ".csv",index_col=False)
+            if (len(comando_aux1) > 3): #hay WHERE
+                if(comando_aux1[3]=="WHERE"):
+                    #Solo valido 1 criterio
+                    datos_where = comando_aux1[4].split("=")
+                    filtro_columna = datos_where[0]
+                    filtro_criterio = datos_where[1]
+                    datos = datos [(datos[filtro_columna] == filtro_criterio)]
+                else:
+                    print("Sintaxis invalida")
+                    return
+            if (datos_completos==False):
+                #for columna in header_in:
+                print(header_in)
+                    #header_tabla.remove(columna)
+                datos = datos.filter(items=header_in)
+
+
+        else:
+            print("Sintaxis invalida")
+            return
+        #datos.drop(datos.index, axis=1, inplace=True)
+        #datos = datos.drop([''],axis=1)a
+        #datos.set_index('id', inplace=True)
+        print (datos)
+        print(tabulate(datos, headers=header_tabla, tablefmt='psql'))
+        print("Datos mostrados")
+        return
 
     elif lista_comando[0] == "INSERT":
         comando_aux = lista_comando[1]
         comando_aux = comando_aux.split(maxsplit=3)
-        if comando_aux[0] == "INTO":
+        if (comando_aux[0] == "INTO"):
             nombre_db = comando_aux[1]
             nombre_tabla = comando_aux[2]
             direccion_insert = os.getcwd()+"/"+nombre_db+"/"+nombre_tabla+"/"
@@ -153,16 +196,86 @@ def procesar_comando(lista_comando):
                     data.insert(it,"null")
             print(data)
             manejador_csv.escribir_csv(direccion_insert, nombre_tabla, data)
+        elif comando_aux[0] == "BLOCK":
+            print("pendiente, insertado por bloques")
+
         else:
             print("Error de sintexis, falta INTO")
             return
         print("Datos insertados")
 
     elif lista_comando[0] == "UPDATE":
-        print("Actualizando")
+        comando_aux = lista_comando[1].split(maxsplit=3)
+        print(comando_aux)
+        nombre_db = comando_aux[0]
+        nombre_tabla = comando_aux[1]
+        direccion_update = os.getcwd() + "/" + nombre_db + "/" + nombre_tabla + "/"
+        header_tabla = manejador_csv.leer_csv(direccion_update, nombre_tabla, "header")  # Header de la tabla
+        tam_header = len(header_tabla)
+        if (comando_aux[2]=="SET"):
+            it1 = comando_aux[3].find("(")
+            it2 = comando_aux[3].find(")")
+            columnas_in = []
+            valores_in = []
+            if it2 - it1 > 1:
+                header_in = comando_aux[3][it1 + 1:it2]  # capturar las columnas a ingresar
+                header_in = header_in.split(",")
+                for criterio in header_in:
+                    aux = criterio.split("=")
+                    columnas_in.append(aux[0])
+                    valores_in.append(aux[1])
+            else:
+                print("Error al asignar datos")
+                return
+            comando_aux1 = comando_aux[3][it2 + 1:]
+            comando_aux1 = comando_aux1.split(maxsplit=1)
+            if (comando_aux1[0]=="WHERE"):
+                # Solo valido 1 criterio
+                datos_where = comando_aux1[1].split("=")
+                filtro_columna = datos_where[0]
+                filtro_criterio = datos_where[1]
 
-    elif lista_comando[0] == "DELETE" and lista_comando[1] == "FROM":
-        print("Borrando")
+                df = pandas.read_csv(direccion_update+nombre_tabla+".csv")
+
+                for column,valor in zip(columnas_in,valores_in):
+                    if (filtro_columna=="id"):
+                        filtro_criterio=int(filtro_criterio)
+                    df.loc[(df[filtro_columna] == filtro_criterio), column] = valor
+
+                df.to_csv(direccion_update+nombre_tabla+".csv", index=False)
+
+            else:
+                print("Falta WHERE, error de sintaxis")
+                return
+
+
+        else:
+            print("Falta SET")
+            return
+        print("Actualizado")
+        return
+
+    elif lista_comando[0] == "DELETE":
+        comando_aux = lista_comando[1].split(maxsplit=4)
+        if (comando_aux[0]== "FROM"):
+            nombre_db = comando_aux[1]
+            nombre_tabla = comando_aux[2]
+            direccion_delete = os.getcwd() + "/" + nombre_db + "/" + nombre_tabla + "/"
+            if (comando_aux[3]== "WHERE"):
+                datos_where = comando_aux[4].split("=")
+                filtro_columna = datos_where[0]
+                filtro_criterio = datos_where[1]
+                df = pandas.read_csv(direccion_delete + nombre_tabla + ".csv")
+                df.drop(df.query(filtro_columna+"=="+'"'+filtro_criterio+'"').sample(frac=0.90).index)
+                df.to_csv(direccion_delete + nombre_tabla + ".csv", index=False)
+            else:
+                print("Error, falta WHERE")
+                return
+        else:
+            print("Error, falta WHERE")
+            return
+        print("Borrado")
+        return
 
     else:
         print("Error, comando no valido")

@@ -10,6 +10,8 @@ import pandas #para sobreescribir csv
 
 import time #medir el tiempo
 
+import  funciones
+
 from tabulate import tabulate
 
 def procesar_comando(lista_comando):
@@ -20,6 +22,9 @@ def procesar_comando(lista_comando):
         if comando_aux[0] == "DATABASE":
             #Crea una carpeta para la base de datos que se crea
             nombre_db = comando_aux[1]
+            if (funciones.exist_db(nombre_db) == True):
+                print("Esa base de datos ya existe")
+                return
             comando_system = "mkdir "+ ruta + nombre_db
             os.system(comando_system)
             #Agrega al archivo general de bases de datos el registro de la creacion
@@ -34,12 +39,19 @@ def procesar_comando(lista_comando):
             print("Base de datos creada")
 
         elif (comando_aux[0] == "TABLE"):
+            tipos_aceptados = ['int','date','varchar']
             comando_aux2 = comando_aux[1]
             comando_aux2 = comando_aux2.split(maxsplit=3)
             if (comando_aux2[0]== "IN"):
                 #Crea una carpeta para la tabla
                 nombre_db = comando_aux2[1]
+                if (funciones.exist_db(nombre_db) == False):
+                    print("Esa base de datos no existe")
+                    return
                 nombre_tabla = comando_aux2[2]
+                if(funciones.exist_tb(nombre_db,nombre_tabla) == True):
+                    print("Error, esa base de datos ya existe")
+                    return
                 comando_system = "mkdir "+ ruta + nombre_db +"/"+nombre_tabla
                 os.system(comando_system)
                 #Actualizar archivos general de tablas
@@ -69,7 +81,11 @@ def procesar_comando(lista_comando):
                         tam_campo = aux[1][it1+1:it2]
                     else:
                         tipo_campo = aux[1]
-                        tam_campo = "4"
+                        tam_campo = "null"
+                    #Comprobar si el tipo ingresado es valido
+                    if ((tipo_campo not in tipos_aceptados ) == True):
+                        print("Tipo de dato no aceptado", tipo_campo)
+                        return
                     header_metadata.append(nombre_campo)
                     dato = [1,nombre_campo,tipo_campo,tam_campo]
                     datos.append(dato)
@@ -88,6 +104,9 @@ def procesar_comando(lista_comando):
         comando_aux = comando_aux.split(maxsplit=1)
         if comando_aux[0] == "DATABASE":
             nombre_db = comando_aux[1]
+            if (funciones.exist_db(nombre_db) == False):
+                print("Error, no existe base de datos")
+                return
             shutil.rmtree(nombre_db)
             # Actulizar informacion general tabla
             df = pandas.read_csv("database_info.csv")
@@ -99,7 +118,13 @@ def procesar_comando(lista_comando):
             comando_aux2 = comando_aux[1].split(maxsplit=3)
             if comando_aux2[0] == "IN":
                 nombre_db = comando_aux2[1]
+                if (funciones.exist_db(nombre_db) == False):
+                    print("Error, no existe base de datos")
+                    return
                 nombre_tabla = comando_aux2[2]
+                if(funciones.exist_tb(nombre_db,nombre_tabla) == False):
+                    print("Error, no existe la table")
+                    return
                 ruta_delete = os.getcwd() + "/"+nombre_db+"/"+nombre_tabla
                 shutil.rmtree(ruta_delete)
                 #Actulizar informacion general tabla
@@ -119,25 +144,63 @@ def procesar_comando(lista_comando):
         it1 = lista_comando[1].find("(")
         it2 = lista_comando[1].find(")")
         datos_completos = True  # para saber si busca en todos los campos o solo en algunos
+        header_in = []
         if it2 - it1 > 1:
             header_in = lista_comando[1][it1 + 1:it2]  # capturar las columnas a ingresar
+            header_in = header_in.replace(" ","")
             header_in = header_in.split(",")
             datos_completos = False
         comando_aux1 = lista_comando[1][it2 + 1:]
         comando_aux1 = comando_aux1.split(maxsplit=4)
         if (comando_aux1[0] == "FROM"):
             nombre_db = comando_aux1[1]
+            if (funciones.exist_db(nombre_db) == False):
+                print("Error, no existe base de datos")
+                return
             nombre_tabla = comando_aux1[2]
+            if (funciones.exist_tb(nombre_db,nombre_tabla) == False):
+                print("Error, no existe tabla")
+                return
+            if (datos_completos ==  False):
+                for campo in header_in:
+                    if (funciones.exist_campo(nombre_db,nombre_tabla,campo) == False):
+                        print("Error, no existe ",campo)
+                        return
             direccion_select = os.getcwd() + "/" + nombre_db + "/" + nombre_tabla + "/"
             header_tabla = manejador_csv.leer_csv(direccion_select, nombre_tabla, "header")  # Header de la tabla
             datos = pandas.read_csv(direccion_select + nombre_tabla + ".csv",index_col=False)
             if (len(comando_aux1) > 3): #hay WHERE
                 if(comando_aux1[3]=="WHERE"):
                     #Solo valido 1 criterio
-                    datos_where = comando_aux1[4].split("=")
+                    datos_where = []
+                    comando_aux1[4] = comando_aux1[4].replace(" ", "")
+                    if (comando_aux1[4].find("=") > 0):
+                        datos_where = comando_aux1[4].split("=")
+                        tipo_where = "="
+                    elif (comando_aux1[4].find("<") > 0):
+                        datos_where = comando_aux1[4].split("<")
+                        tipo_where = "<"
+                    elif (comando_aux1[4].find(">") > 0):
+                        datos_where = comando_aux1[4].split(">")
+                        tipo_where = ">"
+                    else:
+                        print("Error, comparacion no valida")
+                        return
                     filtro_columna = datos_where[0]
                     filtro_criterio = datos_where[1]
-                    datos = datos [(datos[filtro_columna] == filtro_criterio)]
+                    if (funciones.exist_campo(nombre_db, nombre_tabla, filtro_columna) == False):
+                        print("Error, no existe el campo")
+                        return
+
+                    if (filtro_columna=="id"):
+                        filtro_criterio=int(filtro_criterio)
+                    if (tipo_where == "="):
+                        datos = datos[(datos[filtro_columna] == filtro_criterio)]
+                    elif (tipo_where == "<"):
+                        datos = datos[(datos[filtro_columna] < filtro_criterio)]
+                    else:
+                        datos = datos[(datos[filtro_columna] > filtro_criterio)]
+
                 else:
                     print("Sintaxis invalida")
                     return
@@ -164,14 +227,29 @@ def procesar_comando(lista_comando):
         comando_aux = comando_aux.split(maxsplit=3)
         if (comando_aux[0] == "INTO"):
             nombre_db = comando_aux[1]
+            #Comprobar si existe la base de datos
+            if (funciones.exist_db(nombre_db) == False):
+                print("Error, no existe base de datos")
+                return
             nombre_tabla = comando_aux[2]
+            #Comprobar si existe la tabla
+            if (funciones.exist_tb(nombre_db,nombre_tabla) == False):
+                print("Error, no existe base de datos")
+                return
             direccion_insert = os.getcwd()+"/"+nombre_db+"/"+nombre_tabla+"/"
             #Capturar columnas a ingresar y datos
             it1 = comando_aux[3].find("(")
             it2 = comando_aux[3].find(")")
             datos_completos = True #para saber si insertera en todos los campos o solo en algunos
+            header_in = []
             if it2-it1>1:
                 header_in = comando_aux[3][it1+1:it2] #capturar las columnas a ingresar
+                header_in = header_in.replace(" ","") #Quitando el espacio
+                header_in = header_in.split(",")
+                for campos in header_in:
+                    if (funciones.exist_campo(nombre_db,nombre_tabla,campos) == False):
+                        print ("No existe el campo,",campos)
+                        return
                 datos_completos = False
 
             comando_aux2 = comando_aux[3][it2+1:]
@@ -180,7 +258,13 @@ def procesar_comando(lista_comando):
                 it11 = comando_aux2[1].find("(")
                 it22 = comando_aux2[1].find(")")
                 data = comando_aux2[1][it11+1:it22] #capturo los datos a ingresar
+                data = data.replace(" ","")
                 data = data.split(",")
+                for col,val in zip(header_in,data):
+                    if (funciones.correct_type(nombre_db,nombre_tabla,col,val) == False):
+                        print("Error, tipo de dato no valido",col,val)
+                        return
+
             else:
                 print("Error de sintaxis, falta VALUES")
                 return
@@ -188,9 +272,10 @@ def procesar_comando(lista_comando):
             #Comprobar con los campos de la tabla
             if datos_completos == False:
                 header_tabla = manejador_csv.leer_csv(direccion_insert,nombre_tabla,"header") #Header de la tabla
-                faltantes = []
+                faltantes = [] #Guarda los indices de los campos que no se inserten
+                newdata = []  #Reacomodar los datos en caso hayan sido ingresados en desorden
                 for head in header_tabla:
-                    if header_in.find(head)<0:
+                    if (head not in header_in) == True:
                         faltantes.append(header_tabla.index(head))
                 for it in faltantes:
                     data.insert(it,"null")
@@ -219,9 +304,13 @@ def procesar_comando(lista_comando):
             valores_in = []
             if it2 - it1 > 1:
                 header_in = comando_aux[3][it1 + 1:it2]  # capturar las columnas a ingresar
+                header_in = header_in.replace(" ","")
                 header_in = header_in.split(",")
                 for criterio in header_in:
                     aux = criterio.split("=")
+                    if (funciones.correct_type(nombre_db,nombre_tabla,aux[0],aux[1]) == False):
+                        print("Error, tipo incorrecto")
+                        return
                     columnas_in.append(aux[0])
                     valores_in.append(aux[1])
             else:
@@ -229,18 +318,38 @@ def procesar_comando(lista_comando):
                 return
             comando_aux1 = comando_aux[3][it2 + 1:]
             comando_aux1 = comando_aux1.split(maxsplit=1)
+            tipo_where = ""
             if (comando_aux1[0]=="WHERE"):
                 # Solo valido 1 criterio
-                datos_where = comando_aux1[1].split("=")
+                if (comando_aux1[1].find("=")>0):
+                    datos_where = comando_aux1[1].split("=")
+                    tipo_where = "="
+                elif (comando_aux1[1].find("<") > 0):
+                    datos_where = comando_aux1[1].split("<")
+                    tipo_where = ">"
+                elif (comando_aux1[1].find(">")>0):
+                    datos_where = comando_aux1[1].split(">")
+                    tipo_where = ">"
+                else:
+                    print("Error, comparacion no valida")
+                    return
+
                 filtro_columna = datos_where[0]
                 filtro_criterio = datos_where[1]
-
+                if (funciones.exist_campo(nombre_db, nombre_tabla, filtro_columna) == False):
+                    print("Error, no existe el campo")
+                    return
                 df = pandas.read_csv(direccion_update+nombre_tabla+".csv")
 
                 for column,valor in zip(columnas_in,valores_in):
                     if (filtro_columna=="id"):
                         filtro_criterio=int(filtro_criterio)
-                    df.loc[(df[filtro_columna] == filtro_criterio), column] = valor
+                    if (tipo_where == "="):
+                        df.loc[(df[filtro_columna] == filtro_criterio), column] = valor
+                    elif (tipo_where == "<"):
+                        df.loc[(df[filtro_columna] < filtro_criterio), column] = valor
+                    else:
+                        df.loc[(df[filtro_columna] > filtro_criterio), column] = valor
 
                 df.to_csv(direccion_update+nombre_tabla+".csv", index=False)
 
@@ -259,14 +368,45 @@ def procesar_comando(lista_comando):
         comando_aux = lista_comando[1].split(maxsplit=4)
         if (comando_aux[0]== "FROM"):
             nombre_db = comando_aux[1]
+            if (funciones.exist_db(nombre_db) == False):
+                print("Error, no existe base de datos")
+                return
             nombre_tabla = comando_aux[2]
+            if (funciones.exist_tb(nombre_db,nombre_tabla) == False):
+                print("Error, no existe la tabla o ha sido eliminada")
+                return
             direccion_delete = os.getcwd() + "/" + nombre_db + "/" + nombre_tabla + "/"
             if (comando_aux[3]== "WHERE"):
-                datos_where = comando_aux[4].split("=")
+                comando_aux[4] = comando_aux[4].replace(" ","")
+                datos_where = []
+                tipo_where = ""
+                if (comando_aux[4].find("=") > 0):
+                    datos_where = comando_aux[4].split("=")
+                    tipo_where = "="
+                elif (comando_aux[4].find("<") > 0):
+                    datos_where = comando_aux[4].split("<")
+                    tipo_where = ">"
+                elif (comando_aux[4].find(">") > 0):
+                    datos_where = comando_aux[4].split(">")
+                    tipo_where = ">"
+                else:
+                    print("Error, comparacion no valida")
+                    return
                 filtro_columna = datos_where[0]
+                if (funciones.exist_campo(nombre_db,nombre_tabla,filtro_columna) == False):
+                    print("Error, no existe el campo")
+                    return
                 filtro_criterio = datos_where[1]
                 df = pandas.read_csv(direccion_delete + nombre_tabla + ".csv")
-                indices_to_delete = df.index[df[filtro_columna]==filtro_criterio].tolist()
+                if (filtro_columna == "id"):
+                    filtro_criterio = int(filtro_criterio)
+                if (tipo_where == "="):
+                    indices_to_delete = df.index[df[filtro_columna] == filtro_criterio].tolist()
+                elif (tipo_where == "<"):
+                    indices_to_delete = df.index[df[filtro_columna] < filtro_criterio].tolist()
+                else:
+                    indices_to_delete = df.index[df[filtro_columna] > filtro_criterio].tolist()
+
                 df.drop(df.index[indices_to_delete],inplace=True)
                 #df.drop(df.query(filtro_columna+"=="+'"'+filtro_criterio+'"').sample(frac=0.90).index)
                 df.to_csv(direccion_delete + nombre_tabla + ".csv", index=False)

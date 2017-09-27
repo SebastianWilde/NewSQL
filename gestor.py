@@ -217,7 +217,9 @@ def procesar_comando(lista_comando):
         #datos.drop(datos.index, axis=1, inplace=True)
         #datos = datos.drop([''],axis=1)a
         #datos.set_index('id', inplace=True)
-        print (datos)
+
+        #print (datos)
+
         print(tabulate(datos, headers=header_tabla, tablefmt='psql'))
         print("Datos mostrados")
         return
@@ -282,6 +284,14 @@ def procesar_comando(lista_comando):
             print(data)
             manejador_csv.escribir_csv(direccion_insert, nombre_tabla, data)
         elif comando_aux[0] == "BLOCK":
+            nombre_db = comando_aux[1]
+            nombre_tabla = comando_aux[2]
+            file = comando_aux[3]
+            print("JHe",file)
+            data = manejador_csv.leer_csv(os.getcwd(),file)
+            direccion_insert = os.getcwd()+"/"+nombre_db+"/"+nombre_tabla+"/"
+            manejador_csv.escribir_csv(direccion_insert, nombre_tabla, data)
+            print (nombre_db,nombre_tabla,file)
             print("pendiente, insertado por bloques")
 
         else:
@@ -321,6 +331,7 @@ def procesar_comando(lista_comando):
             tipo_where = ""
             if (comando_aux1[0]=="WHERE"):
                 # Solo valido 1 criterio
+                comando_aux1[1] = comando_aux1[1].replace(" ", "")
                 if (comando_aux1[1].find("=")>0):
                     datos_where = comando_aux1[1].split("=")
                     tipo_where = "="
@@ -337,20 +348,25 @@ def procesar_comando(lista_comando):
                 filtro_columna = datos_where[0]
                 filtro_criterio = datos_where[1]
                 if (funciones.exist_campo(nombre_db, nombre_tabla, filtro_columna) == False):
-                    print("Error, no existe el campo")
+                    print("Error, no existe el campo",filtro_columna)
                     return
                 df = pandas.read_csv(direccion_update+nombre_tabla+".csv")
 
                 for column,valor in zip(columnas_in,valores_in):
+                    if (funciones.correct_type(nombre_db,nombre_tabla,column,valor) == False):
+                        print("La columna tiene diferente tipo que el valor",column,valor)
+                        return
                     if (filtro_columna=="id"):
                         filtro_criterio=int(filtro_criterio)
                     if (tipo_where == "="):
+                        print ("here",df.loc[(df[filtro_columna] == filtro_criterio)])
                         df.loc[(df[filtro_columna] == filtro_criterio), column] = valor
                     elif (tipo_where == "<"):
                         df.loc[(df[filtro_columna] < filtro_criterio), column] = valor
                     else:
                         df.loc[(df[filtro_columna] > filtro_criterio), column] = valor
 
+                #print(df)
                 df.to_csv(direccion_update+nombre_tabla+".csv", index=False)
 
             else:
@@ -398,8 +414,13 @@ def procesar_comando(lista_comando):
                     return
                 filtro_criterio = datos_where[1]
                 df = pandas.read_csv(direccion_delete + nombre_tabla + ".csv")
-                if (filtro_columna == "id"):
-                    filtro_criterio = int(filtro_criterio)
+                if(funciones.correct_type(nombre_db,nombre_tabla,filtro_columna,filtro_criterio) == False):
+                    print("No son el mismo tipo",filtro_criterio,filtro_columna)
+                    return
+                else:
+                    filtro_criterio = funciones.toType(nombre_db,nombre_tabla,filtro_columna,filtro_criterio)
+#                if (filtro_columna == "id"):
+ #                   filtro_criterio = int(filtro_criterio)
                 if (tipo_where == "="):
                     indices_to_delete = df.index[df[filtro_columna] == filtro_criterio].tolist()
                 elif (tipo_where == "<"):

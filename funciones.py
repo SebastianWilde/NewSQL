@@ -9,9 +9,9 @@ def isfloat(x):
     except ValueError:
         return False
     else:
-        return True
+        return a
 
-def isDate(x):
+def toDate(x):
     try:
         x = x.replace("-","")
         y = datetime.datetime.strptime(x, "%Y%m%d").date()
@@ -24,7 +24,7 @@ def isDate(x):
 def exist_db(db):
     df = pandas.read_csv("database_info.csv")
     dbs = df["name_db"].tolist()
-    return  db in dbs (df["eliminacion"][df["name_db"] == db].tolist()[0] == "null")
+    return  db in dbs and (df["eliminacion"][df["name_db"] == db].tolist()[0] == "null")
 
 def exist_tb(db,tb):
     df = pandas.read_csv(os.getcwd()+"/"+db+"/tables_info.csv")
@@ -34,6 +34,7 @@ def exist_tb(db,tb):
 def exist_campo(db,tb,campo):
     df = pandas.read_csv(os.getcwd()+"/"+db+"/"+tb+"/"+tb+"_info.csv")
     campos = df["name_data"].tolist()
+    #print("Los campos son",campos)
     return campo in campos
 
 def correct_type(db,tb,nombre_campo,valor):
@@ -43,9 +44,22 @@ def correct_type(db,tb,nombre_campo,valor):
     if (tipo == "int"):
         return isfloat(valor)
     elif (tipo == "date"):
-        return type(isDate(valor)) == datetime.date
+        return type(toDate(valor)) == datetime.date
     else: #tipo varchar
         size = campo[0][3]
         return len(valor) < int(size)
 
+def getType(db,tb,nombre_campo):
+    df = pandas.read_csv(os.getcwd() + "/" + db + "/" + tb + "/"+tb+"_info.csv")
+    campo = df[df["name_data"] == nombre_campo].values.tolist()
+    tipo = campo[0][2] #captura el tipo
+    return tipo
 
+def toType(db,tb,nombre_campo,valor):
+    tipo = getType(db,tb,nombre_campo)
+    if (tipo == "int"):
+        return isfloat(valor)
+    # elif (tipo == "date"):
+    #     return toDate(valor)
+    else: #tipo varchar
+        return valor

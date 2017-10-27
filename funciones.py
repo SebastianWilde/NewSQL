@@ -1,7 +1,7 @@
 import pandas
 import os
 import datetime
-
+import avl_tree
 
 def isfloat(x):
     try:
@@ -63,3 +63,12 @@ def toType(db,tb,nombre_campo,valor):
     #     return toDate(valor)
     else: #tipo varchar
         return valor
+
+def iterador_avl(lista_indices,nombre_indice):
+    it = 0
+    for i in lista_indices:
+        if i.name == nombre_indice:
+            return it
+        it += 1
+    if it==len(lista_indices):
+        return -1

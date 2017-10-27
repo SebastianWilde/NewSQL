@@ -10,9 +10,13 @@ import pandas #para sobreescribir csv
 
 import time #medir el tiempo
 
-import  funciones
+import funciones
+
+from avl_tree import AVLTree
 
 from tabulate import tabulate
+
+lista_indices = []
 
 def procesar_comando(lista_comando):
     if lista_comando[0] == "CREATE":
@@ -95,6 +99,44 @@ def procesar_comando(lista_comando):
                 print("Tabla creada")
             else:
                 print("Para crear tablas: CREATE TABLE IN nombre_db nombre_tabla")
+
+        elif (comando_aux[0] == "INDEX"):
+            comando_aux2 = comando_aux[1]
+            #nombre ON tb1 db1 (col1,col2...)
+            comando_aux2 = comando_aux2.split(maxsplit=4)
+            nombre_indice = comando_aux2[0]
+            if (comando_aux2[1] != "ON"):
+                print("Error de sintaxis, debe ser CREATE INDEX name ON db1 tb1 (...)")
+                return
+            nombre_db = comando_aux2[2]
+            if (funciones.exist_db(nombre_db) == False):
+                print("Esa base de datos no existe")
+                return
+            nombre_tabla = comando_aux2[3]
+            if (funciones.exist_tb(nombre_db, nombre_tabla) == False):
+                print("Error, no existe esa tabla")
+                return
+            if (len(comando_aux2)<5):
+                print("Faltan argumentos")
+                return
+            it1 = comando_aux2[4].find("(")
+            it2 = comando_aux2[4].find(")")
+            argumentos = comando_aux2[4][it1+1:it2]
+            argumentos = argumentos.replace(" ","")
+            argumentos = argumentos.split(",")
+            for campo in argumentos:
+                if (funciones.exist_campo(nombre_db, nombre_tabla, campo) == False):
+                    print("Error, no existe ", campo)
+                    return
+            #print(argumentos)
+            #Extraer indices y juntar columnas y subir el arbol
+            test = [1,2,3,4]
+            test2 = [9,8,7,5]
+            temporal = AVLTree(test,test2,nombre_indice)
+            lista_indices.append(temporal)
+            print(funciones.iterador_avl(lista_indices,nombre_indice))
+            print(funciones.iterador_avl(lista_indices,"balbla"))
+
         else:
             print("Error, comando no valido")
             return 0

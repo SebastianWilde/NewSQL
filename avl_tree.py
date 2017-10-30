@@ -24,13 +24,22 @@ class AVLTree():
         self.height = -1
         self.balance = 0
         self.name = ""
+        self.db_name = ""
+        self.tb_name = ""
+        self.colums = []
         #arg 0 lista de elementos
         #arg 1 lista de indices
         #arg 2 nombre
-        if len(args) == 3:
+        #arg 3 nombre_db
+        #arg 4 nombre de la tabla
+        #arg 5 columnas
+        if len(args) == 6:
             for i,ind in zip(args[0],args[1]):
                 self.insert(i,ind)
             self.name = args[2]
+            self.db_name = args[3]
+            self.tb_name = args[4]
+            self.colums = args[5]
 
 
     def height(self):

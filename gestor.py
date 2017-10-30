@@ -128,15 +128,18 @@ def procesar_comando(lista_comando):
                 if (funciones.exist_campo(nombre_db, nombre_tabla, campo) == False):
                     print("Error, no existe ", campo)
                     return
+            ruta = nombre_db+"/"+nombre_tabla+"/"+nombre_tabla+".csv"
+            data = pandas.read_csv(ruta,usecols = argumentos)
+            data_list = data.values.tolist()
+            key = []
+            for k in data_list:
+                key.append(funciones.list_to_string(k,'-'))
+            indexs = data.index.tolist()
             #print(argumentos)
-            #Extraer indices y juntar columnas y subir el arbol
-            test = [1,2,3,4]
-            test2 = [9,8,7,5]
-            temporal = AVLTree(test,test2,nombre_indice)
+            temporal = AVLTree(key,indexs,nombre_indice,nombre_db,nombre_tabla,argumentos)
             lista_indices.append(temporal)
-            print(funciones.iterador_avl(lista_indices,nombre_indice))
-            print(funciones.iterador_avl(lista_indices,"balbla"))
-
+            print("Indice creado")
+            #Falta guardar en un archivo
         else:
             print("Error, comando no valido")
             return 0
@@ -210,11 +213,20 @@ def procesar_comando(lista_comando):
                         return
             direccion_select = os.getcwd() + "/" + nombre_db + "/" + nombre_tabla + "/"
             header_tabla = manejador_csv.leer_csv(direccion_select, nombre_tabla, "header")  # Header de la tabla
+
             datos = pandas.read_csv(direccion_select + nombre_tabla + ".csv",index_col=False)
             if (len(comando_aux1) > 3): #hay WHERE
                 if(comando_aux1[3]=="WHERE"):
                     #Solo valido 1 criterio
-                    datos_where = []
+                    #datos_where = []
+                    i_with = comando_aux1[4].find("WITH")
+                    comando_indice = ""
+                    if (i_with > -1):
+                        print("Buscando con indices")
+                        comando_aux1[4] = comando_aux1[4][0:i_with]
+                        comando_indice = comando_aux1[4][i_with:]
+                    else:
+                        print("Buscando sin indices")
                     comando_aux1[4] = comando_aux1[4].replace(" ", "")
                     if (comando_aux1[4].find("=") > 0):
                         datos_where = comando_aux1[4].split("=")
@@ -233,18 +245,24 @@ def procesar_comando(lista_comando):
                     if (funciones.exist_campo(nombre_db, nombre_tabla, filtro_columna) == False):
                         print("Error, no existe el campo")
                         return
-
                     if (filtro_columna=="id"):
                         filtro_criterio=int(filtro_criterio)
                     if (tipo_where == "="):
-                        datos = datos[(datos[filtro_columna] == filtro_criterio)]
+                        if(comando_indice!=""):
+                            comando_indice = comando_indice.split()
+                            ix_indices = funciones.iterador_avl(lista_indices,comando_indice[1])
+                            datos = datos.iloc[ix_indices]
+                        else:
+                            filtro_criterio = funciones.toType(nombre_db,nombre_tabla,filtro_columna,filtro_criterio)
+                            print(type(filtro_criterio))
+                            datos = datos[(datos[filtro_columna] == filtro_criterio)]
                     elif (tipo_where == "<"):
                         datos = datos[(datos[filtro_columna] < filtro_criterio)]
                     else:
                         datos = datos[(datos[filtro_columna] > filtro_criterio)]
 
                 else:
-                    print("Sintaxis invalida")
+                    print("Sintaxis invalida, es necesario un WHERE")
                     return
             if (datos_completos==False):
                 #for columna in header_in:

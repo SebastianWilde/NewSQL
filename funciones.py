@@ -72,3 +72,7 @@ def iterador_avl(lista_indices,nombre_indice):
         it += 1
     if it==len(lista_indices):
         return -1
+
+def list_to_string(lista,conector):
+    string = conector.join(map(str,lista))
+    return string

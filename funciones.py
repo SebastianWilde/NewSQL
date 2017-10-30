@@ -64,7 +64,7 @@ def toType(db,tb,nombre_campo,valor):
     else: #tipo varchar
         return valor
 
-def iterador_avl(lista_indices,nombre_indice):
+def iterador_avl_by_indice(lista_indices,nombre_indice):
     it = 0
     for i in lista_indices:
         if i.name == nombre_indice:
@@ -72,6 +72,30 @@ def iterador_avl(lista_indices,nombre_indice):
         it += 1
     if it==len(lista_indices):
         return -1
+
+#Para el insert
+def iterador_avl_by_tb(lista_indices,tb):
+    it = 0
+    lista = []
+    for i in lista_indices:
+        if i.tb_name == tb:
+            lista.append(it)
+        it += 1
+    if len(lista)==0:
+        return None
+    return lista
+
+#Para el update
+def iterador_avl_by_col(lista_indices,tb,col):
+    it = 0
+    lista = []
+    for i in lista_indices:
+        if i.tb_name == tb and i.colums == col:
+            lista.append(it)
+        it += 1
+    if len(lista)==0:
+        return None
+    return lista
 
 def list_to_string(lista,conector):
     string = conector.join(map(str,lista))

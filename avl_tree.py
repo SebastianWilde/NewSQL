@@ -58,11 +58,15 @@ class AVLTree():
         elif key == tree.key:
             return self.node.indexs
         elif key < tree.key:
-            self.node.left.find_indexs(key)
+            return self.node.left.find_indexs(key)
         elif key > tree.key:
-            self.node.right.find_indexs(key)
+            return self.node.right.find_indexs(key)
         else:
             debug("No existe "+ str(key))
+
+    def insert_in_block(self,keys,indexs):
+        for i, ind in zip(keys, indexs):
+            self.insert(i, ind)
 
 
     def insert(self, key,index):

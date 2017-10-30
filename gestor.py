@@ -220,11 +220,11 @@ def procesar_comando(lista_comando):
                     #Solo valido 1 criterio
                     #datos_where = []
                     i_with = comando_aux1[4].find("WITH")
-                    comando_indice = ""
+                    comando_indice = None
                     if (i_with > -1):
                         print("Buscando con indices")
-                        comando_aux1[4] = comando_aux1[4][0:i_with]
                         comando_indice = comando_aux1[4][i_with:]
+                        comando_aux1[4] = comando_aux1[4][0:i_with]
                     else:
                         print("Buscando sin indices")
                     comando_aux1[4] = comando_aux1[4].replace(" ", "")
@@ -248,13 +248,17 @@ def procesar_comando(lista_comando):
                     if (filtro_columna=="id"):
                         filtro_criterio=int(filtro_criterio)
                     if (tipo_where == "="):
-                        if(comando_indice!=""):
+                        if(comando_indice!=None):
                             comando_indice = comando_indice.split()
-                            ix_indices = funciones.iterador_avl(lista_indices,comando_indice[1])
-                            datos = datos.iloc[ix_indices]
+                            ix_indices = funciones.iterador_avl_by_indice(lista_indices,comando_indice[1])
+                            indices_buscados = lista_indices[ix_indices].find_indexs(filtro_criterio)
+                            if (indices_buscados == -1):
+                                print("No se encontraron esos valores")
+                                return
+                            datos = datos.iloc[indices_buscados]
+                            #datos = datos.iloc[ix_indices]
                         else:
                             filtro_criterio = funciones.toType(nombre_db,nombre_tabla,filtro_columna,filtro_criterio)
-                            print(type(filtro_criterio))
                             datos = datos[(datos[filtro_columna] == filtro_criterio)]
                     elif (tipo_where == "<"):
                         datos = datos[(datos[filtro_columna] < filtro_criterio)]

@@ -1,2 +1,4 @@
 id,name_db,creacion,eliminacion
-1,db1,2017-09-24,null
+1,db1,2017-09-24,2017-11-03
+1,db2,2017-11-03,null
+1,indices,2017-11-03,null

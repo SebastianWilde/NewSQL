@@ -17,6 +17,7 @@ from avl_tree import AVLTree
 from tabulate import tabulate
 
 lista_indices = []
+union_columnas = '-'
 
 def procesar_comando(lista_comando):
     if lista_comando[0] == "CREATE":
@@ -133,7 +134,7 @@ def procesar_comando(lista_comando):
             data_list = data.values.tolist()
             key = []
             for k in data_list:
-                key.append(funciones.list_to_string(k,'-'))
+                key.append(funciones.list_to_string(k,union_columnas))
             indexs = data.index.tolist()
             #print(argumentos)
             temporal = AVLTree(key,indexs,nombre_indice,nombre_db,nombre_tabla,argumentos)
@@ -347,21 +348,55 @@ def procesar_comando(lista_comando):
                     data.insert(it,"null")
             print(data)
             manejador_csv.escribir_csv(direccion_insert, nombre_tabla, data)
+
+            #insertando en los indices
+            indices_insertar = funciones.iterador_avl_by_tb(lista_indices,nombre_tabla)
+            if (indices_insertar != None):
+                datos = pandas.read_csv(direccion_insert + nombre_tabla + ".csv", index_col=False)
+                ultimo_indice = datos.index[-1] #optener el ultimo indice para agregarlo
+                datos = datos.iloc[ultimo_indice]
+                for index in indices_insertar:
+                    key = datos[lista_indices[index].colums].tolist()
+                    key = funciones.list_to_string(key,union_columnas)
+                    lista_indices[index].insert(key,ultimo_indice)
+                print("Indices actualizados")
+
         elif comando_aux[0] == "BLOCK":
             nombre_db = comando_aux[1]
             nombre_tabla = comando_aux[2]
             file = comando_aux[3]
-            print("JHe",file)
             data = manejador_csv.leer_csv(os.getcwd(),file)
             direccion_insert = os.getcwd()+"/"+nombre_db+"/"+nombre_tabla+"/"
+            datos = pandas.read_csv(direccion_insert + nombre_tabla + ".csv", index_col=False)
+            if (datos.empty == True):
+                primer_indice = -1
+            else:
+                primer_indice = datos.index[-1]
             manejador_csv.escribir_csv(direccion_insert, nombre_tabla, data)
             print (nombre_db,nombre_tabla,file)
-            print("pendiente, insertado por bloques")
-
+            #insertando indices
+            indices_insertar = funciones.iterador_avl_by_tb(lista_indices, nombre_tabla)
+            if (indices_insertar!=None):
+                datos = pandas.read_csv(direccion_insert + nombre_tabla + ".csv", index_col=False)
+                ultimo_indice = datos.index[-1]
+                lista_index = list(range(primer_indice+1,ultimo_indice+1))
+                datos = datos.iloc[lista_index]
+                for ind in indices_insertar:
+                    keys = []
+                    aux = datos[lista_indices[ind].colums].values.tolist()
+                    for dat in aux:
+                        key = funciones.list_to_string(dat,union_columnas)
+                        keys.append(key)
+                    if (len(keys)!= len(lista_index)):
+                        print("Lo hiciste mal",len(key),len(lista_index))
+                        return
+                    lista_indices[ind].insert_in_block(keys,lista_index)
+                print("Indices actualizados")
         else:
             print("Error de sintexis, falta INTO")
             return
         print("Datos insertados")
+        return
 
     elif lista_comando[0] == "UPDATE":
         comando_aux = lista_comando[1].split(maxsplit=3)
@@ -495,6 +530,18 @@ def procesar_comando(lista_comando):
                 df.drop(df.index[indices_to_delete],inplace=True)
                 #df.drop(df.query(filtro_columna+"=="+'"'+filtro_criterio+'"').sample(frac=0.90).index)
                 df.to_csv(direccion_delete + nombre_tabla + ".csv", index=False)
+
+                indices_eliminar = funciones.iterador_avl_by_tb(lista_indices,nombre_tabla)
+                if (indices_eliminar != None):
+                    for ind in indices_eliminar:
+                        data = pandas.read_csv(direccion_delete + nombre_tabla + ".csv", usecols=lista_indices[ind].colums)
+                        data_list = data.values.tolist()
+                        key = []
+                        for k in data_list:
+                            key.append(funciones.list_to_string(k, union_columnas))
+                        indexs = data.index.tolist()
+                        lista_indices[ind].recontruir(key,indexs)
+                    print("Indices actualizados")
             else:
                 print("Error, falta WHERE")
                 return

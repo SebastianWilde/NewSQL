@@ -93,6 +93,10 @@ class AVLTree():
 
         self.rebalance()
 
+    def recontruir(self,key,index):
+        self.node = None
+        self.insert_in_block(key,index)
+
     def rebalance(self):
         '''
         Rebalance a particular (sub)tree

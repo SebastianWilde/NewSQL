@@ -280,6 +280,7 @@ def procesar_comando(lista_comando):
                         filtro_criterio=int(filtro_criterio)
                     if (tipo_where == "="):
                         if(comando_indice!=None):
+                            start_time1 = time.time()
                             comando_indice = comando_indice.split()
                             ix_indices = funciones.iterador_avl_by_indice(lista_indices,comando_indice[1])
                             indices_buscados = lista_indices[ix_indices].find_indexs(filtro_criterio)
@@ -287,10 +288,13 @@ def procesar_comando(lista_comando):
                                 print("No se encontraron esos valores")
                                 return
                             datos = datos.iloc[indices_buscados]
+                            print("Con indices--- %s seconds ---" % (time.time() - start_time1))
                             #datos = datos.iloc[ix_indices]
                         else:
+                            start_time1 = time.time()
                             filtro_criterio = funciones.toType(nombre_db,nombre_tabla,filtro_columna,filtro_criterio)
                             datos = datos[(datos[filtro_columna] == filtro_criterio)]
+                            print("Sin indices--- %s seconds ---" % (time.time() - start_time1))
                     elif (tipo_where == "<"):
                         datos = datos[(datos[filtro_columna] < filtro_criterio)]
                     else:

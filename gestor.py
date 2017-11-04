@@ -2,6 +2,11 @@ import os #para usar las funciones del sistema operativo
 import os.path as path
 import shutil #para eliminar
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 import manejador_csv #para crear archivos csv para almancenar los datos
 
 import datetime #para manejar fechas
@@ -18,6 +23,7 @@ from tabulate import tabulate
 
 lista_indices = []
 union_columnas = '-'
+ruta_indices = "index/"
 
 def procesar_comando(lista_comando):
     if lista_comando[0] == "CREATE":
@@ -139,6 +145,13 @@ def procesar_comando(lista_comando):
             #print(argumentos)
             temporal = AVLTree(key,indexs,nombre_indice,nombre_db,nombre_tabla,argumentos)
             lista_indices.append(temporal)
+            #Agregando a la tabla general de informacion de indices
+            input = [nombre_indice]
+            manejador_csv.escribir_csv(ruta_indices,"index_info",input)
+            #Serializacion del indice
+            with open(ruta_indices+nombre_indice+".idx", 'wb') as f:
+                pickle.dump(temporal, f,2)
+                print("Indice guardado")
             print("Indice creado")
             #Falta guardar en un archivo
         else:
@@ -182,6 +195,23 @@ def procesar_comando(lista_comando):
                 print("Tabla eliminada")
             else:
                 print("La sintaxis correcta es DROP TABLE IN nombre_db nombre_tabla")
+
+        elif comando_aux[0] == "INDEX":
+            nombre_indice = comando_aux[1]
+            if (funciones.exist_idx(nombre_indice) == False):
+                print("Error, no existe el indice")
+                return
+            df = pandas.read_csv("index/index_info.csv")
+            indices_to_delete = df.index[df["nombre_indice"] == nombre_indice].tolist()
+            df.drop(df.index[indices_to_delete], inplace=True)
+            df.to_csv("index/index_info.csv", index=False)
+            indice_borrar = funciones.iterador_avl_by_indice(lista_indices,nombre_indice)
+            lista_indices.pop(indice_borrar)
+            os.remove(ruta_indices+nombre_indice+".idx")
+            print("Indice borrado")
+            return
+
+
         else:
             print("Error, comando no valido")
             return 0
@@ -561,6 +591,22 @@ def procesar_comando(lista_comando):
 if (path.exists("database_info.csv")==False):
     header_database_info = ["id","name_db","creacion","eliminacion"]
     manejador_csv.crear_archivo(os.getcwd(),"database_info",header_database_info)
+if (path.exists("index/index_info.csv")==False):
+    header_database_info = ["nombre_indice"]
+    manejador_csv.crear_archivo(os.getcwd()+"/index","index_info",header_database_info)
+else:
+    #Cargando indices ya creados
+    df = pandas.read_csv(ruta_indices+"index_info.csv")
+    if (df.empty == False):
+        df = df["nombre_indice"].values.tolist()
+        for ind in df:
+            with open(ruta_indices+ind+".idx",'rb') as f:
+                temp = pickle.load(f)
+                lista_indices.append(temp)
+        print("Indices cargados")
+        print(len(lista_indices))
+        for i in lista_indices:
+            print(i.name)
 #Preguntar comandos
 comando = ""
 while (comando != "exit"):

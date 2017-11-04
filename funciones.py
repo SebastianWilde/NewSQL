@@ -26,6 +26,11 @@ def exist_db(db):
     dbs = df["name_db"].tolist()
     return  db in dbs and (df["eliminacion"][df["name_db"] == db].tolist()[0] == "null")
 
+def exist_idx(idx):
+    df = pandas.read_csv("index/index_info.csv")
+    dbs = df["nombre_indice"].tolist()
+    return idx in dbs
+
 def exist_tb(db,tb):
     df = pandas.read_csv(os.getcwd()+"/"+db+"/tables_info.csv")
     tbs = df["name_tabla"].tolist()

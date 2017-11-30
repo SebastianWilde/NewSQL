@@ -5,7 +5,7 @@
 
 #include "AvlTree.h"
 #include "CFile.h"
-
+#include <fstream>
 #include <iostream>
 #include <vector>
 #include <time.h>
@@ -26,7 +26,7 @@ struct Lless
 		return a < b;
 	}
 };
-
+/*
 string space(int n)
 {
 	string aux="";
@@ -36,7 +36,7 @@ string space(int n)
 	}
 	return aux;
 }
-
+*/
 struct Trait
 {
 	typedef t T;
@@ -79,20 +79,21 @@ int main(int argc, char* argv[])
 		/* INSERT */
 		n_bytes=cfile.number_bytes();
 		cout<<"n_bytes: "<<n_bytes<<endl;
+		t1 = clock();
 		vector<T> m_vector = cfile.read_file(col);
 		N i,j;
 		for (i=0, j=n_bytes; i<m_vector.size();i++,j+=n_bytes)
 			avltree.insert(m_vector[i],j);
 			// avltree.insert(stol(m_vector[i]),j);
-		
+		t2 = clock();
 		/* PRINT */
-		cout<<"save index\n";
+		cout<<"save index, tiempo: "<<((float)t2-(float)t1)/CLOCKS_PER_SEC<<endl;
 		avltree.printLe2(avltree.root);	
 		cout<<endl;
 		
 		/* FIND */
 		char opcion;
-		string menu = "f)find data\ni)insert data\nd)delete data\ne)exit\n";
+		string menu = "f)find data\ni)insert data\nd)delete data\nu)update data\ne)exit\n";
 		cout<<menu;
 		cin>>opcion;
 		while(opcion!='e')
@@ -110,21 +111,24 @@ int main(int argc, char* argv[])
 				{
 					t1 = clock() - t1;
 					cout<<"error no encontrado\n"; 
-					return 0;
+					//return 0;
 				}
-		
-				/* t2 */
-				int i=0;
-				t2 = clock();
-				for(i=0;i<tmp.size();i++)
+				else
 				{
-					cout<<cfile.read_file_p(tmp[i])<<endl;
+					/* t2 */
+					int i=0;
+					t2 = clock();
+					for(i=0;i<tmp.size();i++)
+					{
+						cout<<cfile.read_file_p(tmp[i])<<endl;
+					}
+					//cout<<tmp.front()<<" contiene: "<<cfile.read_file_p(tmp.front())<<endl;
+					//cout<<tmp.front()<<" contiene: "<<cfile.read_file_p(tmp.front())<<endl;
+					t2 = clock()-t2;			
+					cout<<"tiempo: "<<((float)t2-(float)t1)/CLOCKS_PER_SEC<<endl;
+					
 				}
-				//cout<<tmp.front()<<" contiene: "<<cfile.read_file_p(tmp.front())<<endl;
-				//cout<<tmp.front()<<" contiene: "<<cfile.read_file_p(tmp.front())<<endl;
-				t2 = clock()-t2;			
-				cout<<"tiempo get list: "<<((float)t1)/CLOCKS_PER_SEC<<endl;
-				cout<<"tiempo busqueda en list : "<<((float)t2)/CLOCKS_PER_SEC<<endl;
+
 
 			}
 			else if (opcion=='i')
@@ -158,14 +162,38 @@ int main(int argc, char* argv[])
 				cout<<"\nsave index\n";
 				avltree.printLe2(avltree.root);
 			}
-			/*else if (opcion =='d')
+			else if (opcion =='d')
 			{
 				string campo;
 				cout<<"Borrar: ";
 				cin>>campo;
-				avltree.de
+				cfile._delete(campo);
+				avltree.remove(campo);
+				cout<<"Datos borrados, indices actualizados"<<endl;
+			}
+			else if (opcion == 'u')
+			{
+				string campo,update;
+				cout<<"Dato actual: ";
+				cin>>update;
+				cout<<"Nuevo dato: ";
+				cin>>campo;
+				int columna_update;
+				cout<<"Columna: ";
+				cin>>columna_update;
+				cfile.update(update,campo,columna_update);
+				if (col == columna_update)
+				{
+					vector<N> tmp;
+					avltree.find2(update,tmp);
+					avltree.remove(update);
+					for (int k=0;k<tmp.size();k++)
+						avltree.insert(campo,tmp[k]);
+				}
 
-			}*/
+				cout<<"Datos actualizados, indices actualizados"<<endl;
+
+			}
 			cout<<menu;
 			cin>>opcion;
 		}

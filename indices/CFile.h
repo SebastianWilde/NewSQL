@@ -8,11 +8,32 @@
 #include <stdio.h>
 #include <string>
 #include <algorithm>    // std::remove_if
-
+using namespace std;
 typedef string T;
 // typedef unsigned long T;
+string space(int n)
+{
+    string aux="";
+    for (int i= 0;i<n;i++)
+    {
+        aux+=" ";
+    }
+    return aux;
+}
 
-using namespace std;
+vector<int> str_find(string cad,string fin)
+{
+    vector<int> fi;
+    int pos = cad.find(fin);
+    while (pos != -1)
+    {
+        pos = cad.find(fin,pos+1);
+        fi.push_back(pos);
+    }
+    fi.push_back(pos);
+    return fi;
+
+}
 
 class CFile{
 public:
@@ -31,6 +52,8 @@ public:
     void generate_file();
     void fill_file(int);
     void write(string);
+    void _delete(string);
+    void update(string,string,int);
     int number_bytes();
     string read_file_p(unsigned long int);
     vector<T> read_file(int); 
@@ -46,6 +69,56 @@ CFile::CFile(string n_file)
     // zeros = {"0000","000","00","0",""};
     // m_part=N/n;
 
+}
+
+void CFile::update(string update,string data,int col)
+{
+    data = data + space(len_col-data.size());
+    update = update + space(len_col-update.size());
+    string line;
+    ifstream fin;
+    fin.open(name_file.c_str());
+    ofstream temp;
+    temp.open("temp.csv");
+    int pos;
+    if(col==1)
+        pos = (col-1)*len_col;
+    else
+        pos = ((col-1)*len_col)+col-1;
+        
+    while(getline(fin,line))
+    {
+        //vector<int> finds = str_find(line,update);
+        //if(find(finds.begin(), finds.end(), pos) != finds.end())
+        if(line.find(update)==pos)
+            line.replace(pos,len_col,data);
+        temp << line <<endl;
+    }
+    temp.close();
+    fin.close();
+    remove(name_file.c_str());
+    rename("temp.csv",name_file.c_str());
+}
+
+void CFile::_delete(string data)
+{
+    data = data + space(len_col-data.size());
+    string line;
+    ifstream fin;
+    fin.open(name_file.c_str());
+    ofstream temp;
+    temp.open("temp.csv");
+    while(getline(fin,line))
+    {
+        if (line.find(data)!=-1)
+            line = space(line.size());
+        //line.replace(line.find(data),data.length(),"");
+        temp << line <<endl;
+    }
+    temp.close();
+    fin.close();
+    remove(name_file.c_str());
+    rename("temp.csv",name_file.c_str());
 }
 
 void CFile::write(string data)
@@ -128,7 +201,7 @@ vector<T> CFile::read_file(int col )
         else
             line=line.substr(((col-1)*len_col)+col-1,len_col);
         
-        line.erase(remove(line.begin(), line.end(), ' '), line.end());       
+        line.erase(remove(line.begin(), line.end(),' '), line.end());       
         rpta.push_back(line);
     }
     is_file.close(); 

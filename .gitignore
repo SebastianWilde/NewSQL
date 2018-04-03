@@ -110,3 +110,5 @@ ENV/
 __MACOSX
 sgdb
 tree.txt
+
+IDE/

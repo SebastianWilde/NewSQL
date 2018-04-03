@@ -1,0 +1,75 @@
+sintaxis básica
+CREATE DATABASE db1
+CREATE TABLE IN db1 tb1 (id:int,...)
+DROP DATABASE db1
+DROP TABLE IN db tb1
+
+INSERT INTO db1 tab1 (id,nombre) VALUES (1,4)
+SELECT () FROM db1 tab1 WHERE (atrib = valor)
+UPDATE db1 tab1 SET (atrib = valor,...) WHERE (atrib = valor)
+DELETE FROM db1 tab1 WHERE (atrib = valor)
+
+SELECT () FROM db1 tab1 
+------------------------------------------
+Comandos para probar
+
+CREATE DATABASE db1
+CREATE TABLE IN db1 tb1 (id:int,nombre:varchar[8],dia:date)
+
+INSERT INTO db1 tb1 (id,nombre) VALUES (1,juan)
+INSERT INTO db1 tb1 (id,dia) VALUES (3,2017-8-8)
+
+SELECT () FROM db1 tb1
+SELECT () FROM db1 tb2 WHERE id > 1
+SELECT (nombre) FROM db1 tb2
+UPDATE db1 tb2 SET (dia=2017-12-12) WHERE id=1
+DELETE FROM db1 tb1 WHERE nombre = juan
+DROP TABLE IN db1 tb1
+
+
+---------------------
+CREATE TABLE IN db1 tb3 (id:int,nombre:varchar[12],apellido:varchar[20],edad:int,profesion:varchar[15])
+INSERT BLOCK db1 tb3 lote100
+SELECT () FROM db1 tb3
+--------------------------------------------
+Indices
+
+CREATE INDEX nombre ON tb1 db1 (col1,col2...)
+
+--------------------------------------------------
+CREATE INDEX primero ON db1 tb5 (edad)
+SELECT () FROM db1 tb5 WHERE edad = 18
+--- 9.953853368759155 seconds ---
+SELECT () FROM db1 tb5 WHERE edad = 18 WITH primero
+Datos mostrados
+--- 9.549581289291382 seconds ---
+
+
+----------------------------
+CREATE DATABASE db2
+CREATE TABLE IN db2 tb_1000 (id:int,nombre:varchar[12],apellido:varchar[20],edad:int,profesion:varchar[15])
+INSERT BLOCK db2 tb_1000 lote1000
+SELECT () FROM db2 tb_1000
+CREATE INDEX prueba ON db2 tb_1000 (edad)
+SELECT () FROM db2 tb_1000 WHERE edad = 24
+SELECT () FROM db2 tb_1000 WHERE edad = 24 WITH prueba
+INSERT INTO db2 tb_1000 (id,nombre) VALUES (1000,quispe)
+DELETE FROM db2 tb_1000 WHERE nombre = quispe
+----------------------------------------------
+CREATE TABLE IN db2 tb_10000000 (id:int,nombre:varchar[12],apellido:varchar[20],edad:int,profesion:varchar[15])
+INSERT BLOCK db2 tb_1000 lote10000000
+SELECT () FROM db2 tb_10000000
+
+	0.044400691986083984 seconds ---
+0.015791893005371094 seconds --
+12.454609870910645 seconds ---
+Con indices--- 10.770997762680054 seconds ---
+
+SELECT () FROM indices test WHERE edad = 20
+Sin indices--- 0.399491548538208 seconds ---
+comando>>SELECT () FROM indices test WHERE edad = 20 WITH prueba2
+Buscando con indices
+Con indices--- 0.15939569473266602 seconds ---
+
+
+Sin indices--- 1.0663766860961914 seconds -

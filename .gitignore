@@ -105,3 +105,8 @@ ENV/
 
 #
 .idea/
+
+#
+__MACOSX
+sgdb
+tree.txt
